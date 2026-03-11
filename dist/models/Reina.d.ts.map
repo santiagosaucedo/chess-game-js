@@ -1,1 +1,0 @@
-{"version":3,"file":"Reina.d.ts","sourceRoot":"","sources":["../../src/models/Reina.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,KAAK,EAAE,MAAM,YAAY,CAAC;AACnC,OAAO,EAAE,KAAK,EAAE,QAAQ,EAAa,MAAM,YAAY,CAAC;AAExD,qBAAa,KAAM,SAAQ,KAAK;gBAEhB,KAAK,EAAE,KAAK,EAAE,eAAe,EAAE,QAAQ;IAKnD,kBAAkB,CAAC,aAAa,EAAE,QAAQ,GAAG,OAAO;CA6BvD"}
