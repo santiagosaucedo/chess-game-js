@@ -1,0 +1,1 @@
+{"version":3,"file":"Caballo.d.ts","sourceRoot":"","sources":["../../src/models/Caballo.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,KAAK,EAAE,MAAM,YAAY,CAAC;AACnC,OAAO,EAAE,KAAK,EAAE,QAAQ,EAAa,MAAM,YAAY,CAAC;AAExD,qBAAa,OAAQ,SAAQ,KAAK;gBAElB,KAAK,EAAE,KAAK,EAAE,eAAe,EAAE,QAAQ;IAkBnD,kBAAkB,CAAC,aAAa,EAAE,QAAQ,GAAG,OAAO;CA0BvD"}

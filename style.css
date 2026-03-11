@@ -1,0 +1,331 @@
+/* style.css */
+
+/*
+PROPÓSITO GLOBAL: 
+ * Definir la presentación visual de la interfaz del ajedrez, aislándola 
+   de la lógica de negocio (TypeScript) y asegurando responsividad.
+*/
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    /* NUEVO: Aplicación de la fuente pixelada */
+    font-family: 'Press Start 2P', cursive; 
+    background-color: #2c3e50;
+    color: white;
+    margin-top: 50px;
+}
+
+/*
+PROPÓSITO: 
+ * Dibujar la grilla contenedora del tablero adaptada a cualquier pantalla.
+*/
+#tablero-web {
+    width: 95vw; 
+    max-width: 600px; 
+    aspect-ratio: 1 / 1; 
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr)); 
+    grid-template-rows: repeat(8, minmax(0, 1fr));    
+    border: 4px solid #34495e;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    
+    /* NUEVO: Bloqueo de selección fantasma a nivel global */
+    user-select: none;
+    -webkit-user-select: none; /* Soporte para celulares / Safari */
+}
+
+
+
+/*
+PROPÓSITO: 
+ * Establecer que cada coordenada ocupe toda la fracción disponible en la grilla dinámica.
+*/
+.casilla {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    /* NUEVO: Bloqueo de selección fantasma por casilla individual */
+    user-select: none;
+    -webkit-user-select: none;
+
+    /* NUEVO: position relative es necesario para el punto verde */
+    position: relative;
+}
+
+
+
+/*
+PROPÓSITO: 
+ * Dibujar un indicador visual (punto verde) sobre las casillas que representan
+   un destino legal para la pieza actualmente seleccionada.
+INV. REP.:
+ * pointer-events: none garantiza que el punto visual no bloquee el click del usuario.
+*/
+/*
+PROPÓSITO: 
+ * Animación base para que la elevación de la pieza se vea fluida.
+*/
+.pieza-img {
+    max-width: 80%; 
+    max-height: 80%;
+    object-fit: contain; 
+    user-select: none;
+    pointer-events: none; 
+    transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out;
+}
+
+/*
+PROPÓSITO: 
+ * Efecto de elevación al seleccionar una pieza.
+*/
+.casilla.seleccionada .pieza-img {
+    transform: translateY(-10px) scale(1.15); 
+    filter: drop-shadow(0 15px 5px rgba(0,0,0,0.6)); 
+}
+
+/*
+PROPÓSITO: 
+ * Recuadro Neón Gamer Oscuro para los destinos legales.
+ * Utiliza un borde sólido y un resplandor (box-shadow) que pulsa suavemente 
+   para evitar la fatiga visual de las animaciones rotativas rápidas.
+*/
+.casilla.movimiento-valido {
+    /* Borde continuo hacia adentro para no romper la grilla */
+    box-sizing: border-box; 
+    border: 4px solid #0b8a0b; 
+    
+    /* Animación de pulso (ida y vuelta constante) */
+    animation: pulso-neon 1.5s infinite alternate ease-in-out;
+}
+
+
+/* Keyframes que aumentan y disminuyen el brillo creando la sensación continua */
+@keyframes pulso-neon {
+    0% { 
+        box-shadow: 0 0 5px #0b8a0b, inset 0 0 5px #0b8a0b; 
+        border-color: #0b8a0b;
+    }
+    100% { 
+        box-shadow: 0 0 15px #39ff14, inset 0 0 15px #39ff14; 
+        border-color: #39ff14;
+    }
+}
+
+
+/* Colores de paridad del tablero */
+.casilla.blanca { background-color: #f0d9b5; }
+.casilla.negra { background-color: #b58863; }
+
+
+/*
+PROPÓSITO: 
+ * Estilizar el menú modal de coronación manteniéndolo en el centro del tablero.
+*/
+.menu-promocion {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(15, 25, 35, 0.95);
+    /* Reemplazamos el neón verde por un borde arcade clásico */
+    border: 4px solid #555555;
+    box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.8); /* Sombra dura 8-bits */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+    gap: 15px;
+    color: white;
+}
+
+.menu-promocion h3 {
+    margin: 0;
+    font-size: 12px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.opciones-contenedor {
+    display: flex;
+    gap: 10px;
+}
+
+.opcion-promocion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    border: 2px solid transparent;
+    transition: 0.2s;
+}
+
+.opcion-promocion:hover {
+    border-color: #39ff14;
+    background-color: rgba(57, 255, 20, 0.2);
+}
+
+.opcion-promocion img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 5px;
+}
+
+.opcion-promocion span {
+    font-size: 8px;
+}
+
+
+#info-panel {
+    margin-top: 30px;
+    /* Reducimos el tamaño porque la fuente retro suele ser muy ancha */
+    font-size: 14px; 
+    text-align: center;
+    line-height: 1.5;
+}
+
+/*
+PROPÓSITO: 
+ * Recuadro Neón Rojo para casillas que contienen una pieza enemiga (Captura).
+*/
+.casilla.captura-valida {
+    box-sizing: border-box; 
+    border: 4px solid #ff0000; 
+    animation: pulso-rojo 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulso-rojo {
+    0% { box-shadow: 0 0 5px #aa0000, inset 0 0 5px #aa0000; border-color: #aa0000; }
+    100% { box-shadow: 0 0 15px #ff0000, inset 0 0 15px #ff0000; border-color: #ff0000; }
+}
+
+/*
+PROPÓSITO: 
+ * Animación de texto flotante para el efecto "ÑOM" y los puntos al comer.
+*/
+.efecto-nom {
+    position: absolute;
+    color: #ffd700; /* Dorado arcade */
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0px #000, -1px -1px 0px #000; /* Borde oscuro pixelado */
+    z-index: 200;
+    pointer-events: none; /* Para no bloquear clicks */
+    animation: flotar-desvanecer 1s forwards cubic-bezier(0.1, 0.8, 0.1, 1);
+}
+
+@keyframes flotar-desvanecer {
+    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+    50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-50px) scale(1); opacity: 0; }
+}
+
+/*
+PROPÓSITO: 
+ * Animación de texto flotante ROJO para la alerta visual de JAQUE.
+*/
+.efecto-jaque {
+    position: absolute;
+    color: #ff0055; 
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0px #000, -1px -1px 0px #000;
+    z-index: 200;
+    pointer-events: none;
+    animation: flotar-latir 2s forwards ease-in-out;
+}
+
+@keyframes flotar-latir {
+    0% { transform: translateY(0) scale(0.8); opacity: 1; }
+    20% { transform: translateY(-30px) scale(1.3); opacity: 1; }
+    80% { transform: translateY(-40px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(-50px) scale(1); opacity: 0; }
+}
+
+/*
+PROPÓSITO: 
+ * Aplicar estética de máquina Arcade (Fondo oscuro, scanlines y tipografía retro).
+*/
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #0a0a0c;
+    font-family: 'Press Start 2P', cursive; 
+    color: white;
+    overflow: hidden; /* Evita barras de desplazamiento innecesarias */
+}
+
+/* Efecto de líneas de escaneo de monitor antiguo */
+#arcade-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    z-index: -1;
+    pointer-events: none;
+}
+
+#ui-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    z-index: 1;
+}
+
+/* Diseño de las tarjetas de los jugadores */
+.tarjeta-jugador {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(20, 30, 40, 0.8);
+    border: 2px solid #39ff14;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    font-size: 12px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+}
+
+.etiqueta-color {
+    color: #ffd700;
+}
+
+/* Estilo del botón de música */
+.btn-arcade {
+    background-color: transparent;
+    border: 2px solid #ff0055;
+    color: #ff0055;
+    font-family: inherit;
+    padding: 8px 15px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.btn-arcade:hover {
+    background-color: #ff0055;
+    color: white;
+}

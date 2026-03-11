@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajedrez vs IA Rankeado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <body>
+    <div id="arcade-background"></div>
+
+    <div id="ui-container">
+        <div id="controles-globales">
+            <button id="btn-musica" class="btn-arcade">MUSICA: OFF</button>
+        </div>
+
+        <div id="tarjeta-rival" class="tarjeta-jugador">
+            <span id="nombre-rival">Rival IA</span>
+            <span id="color-rival" class="etiqueta-color">Esperando...</span>
+        </div>
+
+        <div id="tablero-web"></div>
+
+        <div id="tarjeta-local" class="tarjeta-jugador">
+            <span id="nombre-local">Jugador Local</span>
+            <span id="color-local" class="etiqueta-color">Esperando...</span>
+        </div>
+        
+        <div id="info-panel">
+            Turno actual: <span id="turno-texto">Blanco</span>
+        </div>
+    </div>
+
+    <audio id="audio-fondo" loop>
+        <source src="./assets/musica-arcade.mp3" type="audio/mpeg">
+    </audio>
+
+    <script type="module" src="./dist/main.js"></script>
+</body>
+</html>

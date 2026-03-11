@@ -1,0 +1,1 @@
+{"version":3,"file":"Peon.d.ts","sourceRoot":"","sources":["../../src/models/Peon.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,KAAK,EAAE,MAAM,YAAY,CAAC;AACnC,OAAO,EAAE,KAAK,EAAE,QAAQ,EAAa,MAAM,YAAY,CAAC;AAExD,qBAAa,IAAK,SAAQ,KAAK;gBAEf,KAAK,EAAE,KAAK,EAAE,eAAe,EAAE,QAAQ;IAInD,kBAAkB,CAAC,aAAa,EAAE,QAAQ,EAAE,SAAS,GAAE,OAAe,GAAG,OAAO;CAmDnF"}

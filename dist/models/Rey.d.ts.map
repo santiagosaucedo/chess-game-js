@@ -1,0 +1,1 @@
+{"version":3,"file":"Rey.d.ts","sourceRoot":"","sources":["../../src/models/Rey.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,KAAK,EAAE,MAAM,YAAY,CAAC;AACnC,OAAO,EAAE,KAAK,EAAE,QAAQ,EAAa,MAAM,YAAY,CAAC;AAExD,qBAAa,GAAI,SAAQ,KAAK;gBAEd,KAAK,EAAE,KAAK,EAAE,eAAe,EAAE,QAAQ;IAKnD,kBAAkB,CAAC,aAAa,EAAE,QAAQ,GAAG,OAAO;CAyBvD"}
