@@ -41,14 +41,17 @@ Durante el desarrollo del core lógico, se abordaron y resolvieron las siguiente
 Para ejecutar este proyecto en un entorno de desarrollo local, siga los siguientes pasos:
 
 1. Clonar el repositorio:
+   ```bash
    git clone [https://github.com/santiagosaucedo/chess-game-js.git](https://github.com/santiagosaucedo/chess-game-js.git)
 2. Instalar las dependencias de compilación:
+   ```bash
     npm install
 3. Ejecutar el compilador de TypeScript en modo vigilancia:
+   ```bash
      npm run watch
 4. Levantar el archivo index.html mediante un servidor local (Ej. Live Server).
 
-----Roadmap y Próximos Pasos------
+##Roadmap y Próximos Pasos
 
 El proyecto cuenta con una ruta de escalabilidad planificada para transicionar de un MVP local a una plataforma competitiva online:
 
