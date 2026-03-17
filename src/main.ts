@@ -1,4 +1,5 @@
 // src/main.ts
+import { MotorIA } from './models/MotorIA.js';
 import { Tablero } from './models/Tablero.js'; 
 import { Posicion, Color, TipoPieza } from './models/types.js'; 
 import { Rey } from './models/Rey.js';
@@ -44,6 +45,10 @@ let destinosValidos: Posicion[] = [];
 
 // NUEVO: Bloqueo de la máquina de estados durante la coronación
 let coordenadaPromocion: Posicion | null = null;
+
+
+// NUEVO: Bandera global para detener el motor cuando finaliza la partida
+let juegoTerminado: boolean = false;
 
 
 // NUEVO: Sistema de Puntuación para el futuro Ranking BD
@@ -211,6 +216,12 @@ function procesarInteraccionUsuario(filaObjetivo: number, columnaObjetivo: numbe
     // Si hay un menú de coronación abierto, ignoramos los clicks en el tablero
     if (coordenadaPromocion !== null) return;
 
+    // NUEVO: Escudo de concurrencia. El jugador no puede tocar nada si es el turno de la IA.
+    if (juego.turnoActual === colorOponente) {
+        console.log("[Sistema] Bloqueo de UI: Esperando respuesta del agente IA.");
+        return;
+    }
+
     // Chivato para saber que el click llegó vivo al TypeScript
     console.log(`\n[Interaccion] Click detectado en -> Fila: ${filaObjetivo}, Columna: ${columnaObjetivo}`);
 
@@ -318,18 +329,35 @@ function procesarInteraccionUsuario(filaObjetivo: number, columnaObjetivo: numbe
                 // ==========================================
                 // EVALUACIÓN DE ESTADO FINAL (Operación READ)
                 // ==========================================
+            
+                // ==========================================
+                // EVALUACIÓN DE ESTADO FINAL (Operación READ)
+                // ==========================================
                 juego.evaluarEstadoDelJuego(juego.turnoActual);
 
-                // NUEVO: Si la evaluación detecta que el rival quedó en Jaque, 
-                // inyectamos el efecto visual sobre su Rey.
-                if (juego.estaEnJaque(juego.turnoActual)) {
+                const enJaque = juego.estaEnJaque(juego.turnoActual);
+                const tieneMovimientos = juego.tieneMovimientosLegales(juego.turnoActual);
+
+                if (!tieneMovimientos) {
+                    // Condición de Fin de Partida alcanzada
+                    if (enJaque) {
+                        procesarFinDePartida(juego.turnoActual); // Jaque Mate
+                    } else {
+                        procesarFinDePartida('EMPATE'); // Rey Ahogado
+                    }
+                    return; // Cortamos el flujo abruptamente
+                } else if (enJaque) {
                     mostrarEfectoJaque(juego.turnoActual);
+                }
+
+                // NUEVO: Solo delegamos el control a la IA si el juego NO ha terminado
+                if (!juegoTerminado && juego.turnoActual === colorOponente) {
+                    procesarTurnoIA();
                 }
             }
         }
     }
 }
-
 /* ====================================================================
     CONTROLADOR (LÓGICA DE INTERFAZ)
 ====================================================================
@@ -401,7 +429,64 @@ function inicializarTableroVisual(): void {
 
     console.log(`[Sistema] Tablero visual generado con perspectiva de las piezas ${colorJugadorLocal}s.`);
 }
+/////////////////////////////////////////
 
+function procesarTurnoIA(): void {
+    /*
+    Propósito:
+     * Orquestar la ejecución autónoma del turno de la Inteligencia Artificial.
+    */
+    if (juego.turnoActual !== colorOponente) return;
+
+    console.log("[Motor IA] Calculando matriz de decisiones...");
+    
+    // Retraso artificial para simular "pensamiento" y mejorar la UX
+    setTimeout(() => {
+        const jugadaOptima = MotorIA.ejecutarMovimientoGreedy(juego, colorOponente);
+
+        if (jugadaOptima) {
+            // Evaluamos si la IA captura algo para mostrar los efectos
+            const piezaDestino = juego.obtenerPieza(jugadaOptima.destino);
+            const piezaOrigen = juego.obtenerPieza(jugadaOptima.origen);
+
+            // Operación UPDATE: La IA ejecuta su movimiento en el Modelo
+            juego.moverPieza(jugadaOptima.origen, jugadaOptima.destino);
+
+            if (piezaDestino && piezaOrigen) {
+                mostrarEfectoCaptura(jugadaOptima.destino, piezaDestino.tipo, piezaOrigen.tipo, piezaOrigen.color);
+            }
+
+            // Auto-coronación simple para la IA (siempre elige Reina por defecto)
+            const piezaMovida = juego.obtenerPieza(jugadaOptima.destino);
+            if (piezaMovida && piezaMovida.tipo === TipoPieza.PEON) {
+                const filaCoronacion = colorOponente === Color.BLANCO ? 7 : 0;
+                if (jugadaOptima.destino.fila === filaCoronacion) {
+                    juego.promoverPeon(jugadaOptima.destino, TipoPieza.REINA);
+                }
+            }
+
+            // Operación DELETE y Repintado
+            actualizarPantalla();
+            juego.evaluarEstadoDelJuego(juego.turnoActual);
+
+            // Verificación de fin de partida o jaque
+            // Verificación de fin de partida o jaque
+        if (juego.estaEnJaque(juego.turnoActual)) {
+            // Operación READ: Si está en jaque y NO tiene movimientos legales, es Mate.
+            if (!juego.tieneMovimientosLegales(juego.turnoActual)) {
+                procesarFinDePartida(juego.turnoActual);
+            } else {
+                mostrarEfectoJaque(juego.turnoActual);
+            }
+        }
+
+        } else {
+            console.log("[Motor IA] Falla crítica: No se encontraron movimientos legales.");
+        }
+    }, 800); // 800ms de retraso
+}
+
+//////////////////////////////////////
 function actualizarPantalla(): void {
     /*
     Proposito:
@@ -525,6 +610,130 @@ function mostrarEfectoJaque(colorEnJaque: Color): void {
     }
  }
 
+////////////////////////////////////////
+
+function procesarFinDePartida(resultado: Color | 'EMPATE'): void {
+    /*
+    Propósito:
+     * Ejecutar la secuencia visual de fin de juego (Fatality aleatorio al Rey o Empate)
+       y desplegar el menú de estadísticas.
+    
+    Observaciones:
+     * Operación UPDATE global: Congela la máquina de estados estableciendo juegoTerminado en true.
+     * Operación READ sobre el Modelo para localizar al Rey en caso de victoria.
+     * Operación UPDATE visual para alterar el DOM y desplegar el modal correspondiente.
+    */
+    juegoTerminado = true; // Operación UPDATE: Congela todo el sistema
+
+    // ==========================================
+    // NUEVO: INYECCIÓN VISUAL INMEDIATA (GAME OVER + INSERT COIN)
+    // ==========================================
+    const tableroVisual = document.getElementById('tablero-web');
+    if (tableroVisual) {
+        tableroVisual.style.position = 'relative'; 
+        
+        // Creamos la pantalla oscura que cubrirá el tablero
+        const capaFinal = document.createElement('div');
+        capaFinal.classList.add('capa-game-over');
+
+        // Título de la derrota o empate
+        const cartelFinal = document.createElement('h2');
+        cartelFinal.classList.add('texto-game-over');
+        cartelFinal.textContent = resultado === 'EMPATE' ? '¡EMPATE!' : 'GAME OVER';
+        
+        // Operación CREATE: El botón interactivo
+        const btnReinicio = document.createElement('button');
+        btnReinicio.classList.add('btn-insert-coin');
+        btnReinicio.textContent = '> INSERT COIN <';
+        
+        // Operación UPDATE: Simulamos el F5 por código
+        btnReinicio.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        capaFinal.appendChild(cartelFinal);
+        capaFinal.appendChild(btnReinicio);
+        tableroVisual.appendChild(capaFinal);
+    }
+
+    // Localizamos los elementos del DOM una sola vez para el Modal posterior
+    const modal = document.getElementById('modal-fin-partida');
+    const tituloModal = modal?.querySelector('.texto-peligro');
+    const spanGanador = document.getElementById('nombre-ganador');
+    const spanPuntaje = document.getElementById('puntaje-final');
+
+    // ==========================================
+    // CASO A: EMPATE POR REY AHOGADO
+    // ==========================================
+    if (resultado === 'EMPATE') {
+        if (tituloModal) tituloModal.textContent = "REY AHOGADO [EMPATE]";
+        if (spanGanador) spanGanador.textContent = "Ninguno (Tablas)";
+        if (spanPuntaje) spanPuntaje.textContent = `${puntajeBlancas} - ${puntajeNegras}`;
+        
+        setTimeout(() => {
+            if (modal) modal.classList.remove('oculto');
+        }, 1000);
+        
+        return; // Cortamos la ejecución aquí, no hay destrucción de Rey
+    }
+
+    // ==========================================
+    // CASO B: VICTORIA POR JAQUE MATE
+    // ==========================================
+    const colorPerdedor = resultado;
+    const audioExplosion = document.getElementById('audio-explosion') as HTMLAudioElement;
+    let reyEncontrado = false;
+
+    // 1. Operación READ & UPDATE visual (Destrucción del Rey)
+    for (let f = 0; f < 8; f++) {
+        for (let c = 0; c < 8; c++) {
+            const pieza = juego.obtenerPieza({ fila: f, columna: c });
+            
+            if (pieza && pieza.tipo === TipoPieza.REY && pieza.color === colorPerdedor) {
+                const casillaVisual = document.querySelector(`[data-fila="${f}"][data-columna="${c}"]`) as HTMLElement;
+                const imgRey = casillaVisual.querySelector('.pieza-img') as HTMLElement;
+                
+                if (casillaVisual && imgRey) {
+                    const esExplosion = Math.random() < 0.5; // 50% de probabilidad
+                    
+                    if (esExplosion) {
+                        // Variante A: Explosión
+                        imgRey.style.display = 'none'; // Ocultamos al Rey
+                        const divExplosion = document.createElement('div');
+                        divExplosion.classList.add('efecto-explosion');
+                        casillaVisual.appendChild(divExplosion);
+                        
+                        if (audioExplosion) {
+                            audioExplosion.currentTime = 0;
+                            audioExplosion.play();
+                        }
+                    } else {
+                        // Variante B: Derrumbe / Partido
+                        imgRey.classList.add('rey-roto');
+                    }
+                }
+                reyEncontrado = true;
+                break;
+            }
+        }
+        if (reyEncontrado) break;
+    }
+
+    // 2. Operación READ: Recopilar datos para el Modal
+    const colorGanador = colorPerdedor === Color.BLANCO ? Color.NEGRO : Color.BLANCO;
+    const puntajeGanador = colorGanador === Color.BLANCO ? puntajeBlancas : puntajeNegras;
+    const nombreGanador = colorGanador === colorJugadorLocal ? "Jugador Local" : "Rival IA";
+
+    // 3. Operación UPDATE visual (Mostrar Modal tras la animación)
+    setTimeout(() => {
+        if (tituloModal) tituloModal.textContent = "JAQUE MATE [X_X]"; // Aseguramos el texto por defecto
+        if (spanGanador) spanGanador.textContent = nombreGanador;
+        if (spanPuntaje) spanPuntaje.textContent = puntajeGanador.toString();
+        
+        if (modal) modal.classList.remove('oculto');
+    }, 2000);
+}
+
 /* ====================================================================
     EJECUCIÓN DEL PROGRAMA
 ====================================================================
@@ -553,6 +762,10 @@ if (btnMusica && audioFondo) {
             btnMusica.style.color = "#ff0055";
         }
     });
+}
+// NUEVO: Si la aleatoriedad asignó las Blancas a la IA, debe iniciar la partida
+if (colorOponente === Color.BLANCO) {
+    procesarTurnoIA();
 }
 
 
