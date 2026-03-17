@@ -49,6 +49,7 @@ Para ejecutar este proyecto en un entorno de desarrollo local, siga los siguient
 4. Levantar el archivo index.html mediante un servidor local (Ej. Live Server).
 
 ----Roadmap y Próximos Pasos------
+
 El proyecto cuenta con una ruta de escalabilidad planificada para transicionar de un MVP local a una plataforma competitiva online:
 
  .Integración de Assets Multimedia (Pendiente Inmediato): Inyección de los archivos de audio físicos en la carpeta de producción 
