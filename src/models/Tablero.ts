@@ -195,6 +195,7 @@ export class Tablero {
         this._casillas[destino.fila]![destino.columna] = pieza;
         this._casillas[origen.fila]![origen.columna] = null;
 
+        // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
         if (pieza.tipo !== TipoPieza.CABALLO) {
             if (!this.caminoEstaLibre(origen, destino)) {
                 console.log(`Error: El camino de la pieza está bloqueado.`);
@@ -202,12 +203,18 @@ export class Tablero {
             }
         }
 
-        // --- NUEVO: 5. REGLA ANTI-SUICIDIO ---
+        // --- 5. REGLA ANTI-SUICIDIO (Debe evaluarse ANTES de mover la pieza) ---
         if (this.dejaAlReyEnJaque(origen, destino, pieza.color)) {
-            console.log(`Error: Movimiento Ilegal. Estás exponiendo a tu Rey a un Jaque (Pieza clavada o movimiento suicida).`);
+            console.log(`Error: Movimiento Ilegal. Estás exponiendo a tu Rey a un Jaque.`);
             return false;
         }
-        
+
+        // --- 6. EJECUCIÓN DEL MOVIMIENTO LÓGICO ---
+        // ¡Solo llegamos aquí si todas las reglas anteriores retornaron un movimiento válido!
+        pieza.mover(destino);
+        this._casillas[destino.fila]![destino.columna] = pieza;
+        this._casillas[origen.fila]![origen.columna] = null;
+
 
         // --- EJECUCIÓN DEL "AL PASO" ---
         

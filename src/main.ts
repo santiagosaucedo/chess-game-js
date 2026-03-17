@@ -285,7 +285,7 @@ function procesarInteraccionUsuario(filaObjetivo: number, columnaObjetivo: numbe
             const piezaDestino = juego.obtenerPieza(posicionClickeada);
             const piezaOrigen = juego.obtenerPieza(posicionOrigenSeleccionada);
             
-            // Si hay un choque de piezas, guardamos los datos para la animación
+            // Si hay un choque de piezas, guardamos temporalmente los datos para la animación
             if (piezaDestino && piezaOrigen) {
                 datosCaptura = { 
                     destino: posicionClickeada, 
@@ -295,11 +295,20 @@ function procesarInteraccionUsuario(filaObjetivo: number, columnaObjetivo: numbe
                 };
             }
 
-            // Operación UPDATE: Intentamos ejecutar el movimiento lógico
-            juego.moverPieza(posicionOrigenSeleccionada, posicionClickeada);
+            // Operación UPDATE: Intentamos ejecutar el movimiento lógico.
+            // NUEVO: Guardamos el resultado booleano (true/false) en una variable.
+            const movimientoExitoso = juego.moverPieza(posicionOrigenSeleccionada, posicionClickeada);
             
-            // Si llegó hasta acá sin lanzar error, el movimiento fue legal
-            movimientoRealizado = true; 
+            if (movimientoExitoso) {
+                // Si el motor dice que fue legal (true), confirmamos el movimiento
+                movimientoRealizado = true; 
+            } else {
+                // Si el motor lo rechazó (ej. suicidio táctico), anulamos los datos 
+                // de captura para evitar que el sistema reproduzca sonidos o animaciones
+                // de un ataque fantasma.
+                datosCaptura = null;
+                console.log(`[Alerta] Movimiento rechazado por reglas de seguridad internas.`);
+            }
             
         } catch (error) {
             console.log(`[Alerta] Movimiento rechazado por el motor logico.`);
