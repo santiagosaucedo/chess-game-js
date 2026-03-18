@@ -75,10 +75,10 @@ export class Tablero {
             this.colocarPieza(new Caballo(color, { fila: fila, columna: 1 }));
             this.colocarPieza(new Alfil(color, { fila: fila, columna: 2 }));
             
-            // La Reina siempre va en la columna 3 (casilla 'd')
+            // La Reina matemática siempre va en la columna 3 (casilla 'd')
             this.colocarPieza(new Reina(color, { fila: fila, columna: 3 }));
             
-            // El Rey siempre va en la columna 4 (casilla 'e')
+            // El Rey matemático siempre va en la columna 4 (casilla 'e')
             this.colocarPieza(new Rey(color, { fila: fila, columna: 4 }));
             
             this.colocarPieza(new Alfil(color, { fila: fila, columna: 5 }));
@@ -179,8 +179,7 @@ export class Tablero {
                 return false;
             }
         }
-
-        // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
+      // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
         if (pieza.tipo !== TipoPieza.CABALLO) {
             if (!this.caminoEstaLibre(origen, destino)) {
                 console.log(`Error: El camino de la pieza está bloqueado.`);
@@ -188,49 +187,53 @@ export class Tablero {
             }
         }
 
-        // --- MOVIMIENTO VÁLIDO ---
-        // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
-
-        pieza.mover(destino);
-        this._casillas[destino.fila]![destino.columna] = pieza;
-        this._casillas[origen.fila]![origen.columna] = null;
-
-        // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
-        if (pieza.tipo !== TipoPieza.CABALLO) {
-            if (!this.caminoEstaLibre(origen, destino)) {
-                console.log(`Error: El camino de la pieza está bloqueado.`);
-                return false;
-            }
-        }
-
-        // --- 5. REGLA ANTI-SUICIDIO (Debe evaluarse ANTES de mover la pieza) ---
+        // 5. REGLA ANTI-SUICIDIO (Siempre se evalúa ANTES de alterar la matriz)
         if (this.dejaAlReyEnJaque(origen, destino, pieza.color)) {
             console.log(`Error: Movimiento Ilegal. Estás exponiendo a tu Rey a un Jaque.`);
             return false;
         }
 
-        // --- 6. EJECUCIÓN DEL MOVIMIENTO LÓGICO ---
-        // ¡Solo llegamos aquí si todas las reglas anteriores retornaron un movimiento válido!
+        // ==========================================
+        // 6. NUEVO: INTERCEPTOR DE ENROQUE
+        // ==========================================
+        if (pieza.tipo === TipoPieza.REY && Math.abs(destino.columna - origen.columna) === 2) {
+            // Determinamos hacia dónde fue el Rey para saber qué lado es
+            const lado = destino.columna > origen.columna ? 'CORTO' : 'LARGO';
+            
+            // Llamamos a tu método especializado
+            const enroqueValido = this.enrocar(pieza.color, lado);
+            
+            if (!enroqueValido) {
+                return false; // El método enrocar ya imprimió el motivo del fallo
+            }
+            
+            // Si fue exitoso, el método enrocar YA movió las piezas en la matriz.
+            // Registramos, avanzamos turno y terminamos el ciclo prematuramente.
+            this._ultimoMovimiento = { piezaMovida: pieza.tipo, color: pieza.color, origen, destino };
+            this.avanzarTurno();
+            return true;
+        }
+
+        // ==========================================
+        // 7. EJECUCIÓN DEL MOVIMIENTO LÓGICO NORMAL
+        // ==========================================
         pieza.mover(destino);
         this._casillas[destino.fila]![destino.columna] = pieza;
         this._casillas[origen.fila]![origen.columna] = null;
 
-
-        // --- EJECUCIÓN DEL "AL PASO" ---
-        
+        // --- EJECUCIÓN DEL "AL PASO" Y CAPTURAS ---
         if (esAlPaso) {
-            // Borramos de la matriz al peón enemigo que estaba al lado nuestro
             const filaEnemigo = origen.fila; 
             const colEnemigo = destino.columna;
             this._casillas[filaEnemigo]![colEnemigo] = null;
             console.log(`¡Peón al Paso! ${pieza.color} captura al Peón fantasma.`);
-        } else if (esCaptura) { // <-- ¡ESTE 'else if' ES LA CLAVE PARA QUE NO CRASHEE!
+        } else if (esCaptura) { 
             console.log(`¡${pieza.tipo} captura a ${piezaEnDestino!.tipo}!`);
         } else {
             console.log(`${pieza.tipo} movido con éxito.`);
         }
 
-        // --- NUEVO: REGISTRO HISTÓRICO ---
+        // --- REGISTRO HISTÓRICO Y TURNO ---
         this._ultimoMovimiento = {
             piezaMovida: pieza.tipo,
             color: pieza.color,
@@ -238,16 +241,9 @@ export class Tablero {
             destino: destino
         };
 
-        // --- NUEVO: CAMBIO DE TURNO ---
-        // Como la jugada fue 100% legal y ya se ejecutó, le pasamos el reloj al rival.
         this.avanzarTurno();
-
         return true;
     }
-
-
-
-
     
     mostrarTablero(): void {
 
@@ -429,7 +425,7 @@ export class Tablero {
         }
 
         // 2. Validar el estado histórico (Memoria de las piezas)
-        if (rey.seHaHaMovido || torre.seHaHaMovido) {
+        if (rey.seHaMovido || torre.seHaMovido) {
             console.log("Error: No se puede enrocar porque el Rey o la Torre ya se movieron previamente.");
             return false;
         }

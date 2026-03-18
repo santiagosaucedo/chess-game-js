@@ -30,7 +30,7 @@ export abstract class Pieza {
     get color(): Color { return this._color; }
     get tipo(): TipoPieza { return this._tipo; }
     get posicion(): Posicion { return this._posicion; }
-    get seHaHaMovido(): boolean { return this._seHaMovido; }
+    get seHaMovido(): boolean { return this._seHaMovido; }
 
     /**
      * PROPÓSITO: Determinar si el movimiento respeta las reglas de la pieza.

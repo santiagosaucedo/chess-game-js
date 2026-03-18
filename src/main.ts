@@ -635,7 +635,7 @@ function procesarFinDePartida(resultado: Color | 'EMPATE'): void {
     juegoTerminado = true; // Operación UPDATE: Congela todo el sistema
 
     // ==========================================
-    // NUEVO: INYECCIÓN VISUAL INMEDIATA (GAME OVER + INSERT COIN)
+    // NUEVO: INYECCIÓN VISUAL INMEDIATA (GAME OVER / YOU WIN + INSERT COIN)
     // ==========================================
     const tableroVisual = document.getElementById('tablero-web');
     if (tableroVisual) {
@@ -645,12 +645,26 @@ function procesarFinDePartida(resultado: Color | 'EMPATE'): void {
         const capaFinal = document.createElement('div');
         capaFinal.classList.add('capa-game-over');
 
-        // Título de la derrota o empate
+        // Título interactivo (Depende de quién ganó)
         const cartelFinal = document.createElement('h2');
-        cartelFinal.classList.add('texto-game-over');
-        cartelFinal.textContent = resultado === 'EMPATE' ? '¡EMPATE!' : 'GAME OVER';
+        cartelFinal.classList.add('texto-fin-partida');
+
+        // Operación READ: Lógica de asignación de victoria/derrota
+        if (resultado === 'EMPATE') {
+            cartelFinal.textContent = '¡EMPATE!';
+            cartelFinal.classList.add('texto-empate');
+        } else {
+            // Si 'resultado' contiene un Color, ese Color es el PERDEDOR.
+            if (resultado === colorJugadorLocal) {
+                cartelFinal.textContent = 'GAME OVER';
+                cartelFinal.classList.add('texto-derrota');
+            } else {
+                cartelFinal.textContent = 'YOU WIN';
+                cartelFinal.classList.add('texto-victoria');
+            }
+        }
         
-        // Operación CREATE: El botón interactivo
+        // Operación CREATE: El botón interactivo (Siempre verde)
         const btnReinicio = document.createElement('button');
         btnReinicio.classList.add('btn-insert-coin');
         btnReinicio.textContent = '> INSERT COIN <';

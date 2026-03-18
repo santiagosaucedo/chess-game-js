@@ -352,19 +352,38 @@ PROPÓSITO:
     gap: 25px;
 }
 
-.texto-game-over {
+/*
+PROPÓSITO: 
+ * Estilos base y variables de color para el texto gigante de fin de partida.
+*/
+.texto-fin-partida {
     font-size: 40px;
-    color: #ff0055;
-    text-shadow: 4px 4px 0px #000, -2px -2px 0px #fff;
-    animation: latido-game-over 1.5s infinite alternate;
     text-align: center;
     margin: 0;
+    text-shadow: 4px 4px 0px #000, -2px -2px 0px #fff;
+    animation: latido-game-over 1.5s infinite alternate;
+}
+
+/* Tema Derrota (Humano pierde) */
+.texto-derrota {
+    color: #ff0055;
+}
+
+/* Tema Victoria (Humano gana) */
+.texto-victoria {
+    color: #39ff14; /* Verde Neón */
+}
+
+/* Tema Empate */
+.texto-empate {
+    color: #ffd700; /* Amarillo/Dorado Arcade */
 }
 
 @keyframes latido-game-over {
     0% { transform: scale(1); }
     100% { transform: scale(1.1); }
 }
+
 
 /* El clásico botón de Insert Coin */
 .btn-insert-coin {
