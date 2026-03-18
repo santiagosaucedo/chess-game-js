@@ -55,17 +55,17 @@ Para ejecutar este proyecto en un entorno de desarrollo local, siga los siguient
 
 El proyecto cuenta con una ruta de escalabilidad planificada para transicionar de un MVP local a una plataforma competitiva online:
 
- .Integración de Assets Multimedia (Pendiente Inmediato): Inyección de los archivos de audio físicos en la carpeta de producción 
+ * Integración de Assets Multimedia (Pendiente Inmediato): Inyección de los archivos de audio físicos en la carpeta de producción 
   (explosion.mp3, comer.mp3, musica-arcade.mp3) para habilitar la experiencia inmersiva programada en el controlador DOM.
 
- .Activación de Temporizadores: Enlace de los relojes digitales de la interfaz con la máquina de estados mediante intervalos asíncronos 
+ * Activación de Temporizadores: Enlace de los relojes digitales de la interfaz con la máquina de estados mediante intervalos asíncronos 
   controlados.
 
- .Transición a Sistema Distribuido (Multijugador): Migración del núcleo de validación hacia un servidor backend nativo en Node.js, 
+ * Transición a Sistema Distribuido (Multijugador): Migración del núcleo de validación hacia un servidor backend nativo en Node.js, 
   orquestando partidas P2P en tiempo real a través de WebSockets (Socket.io).
 
- .Persistencia de Datos (Backend): Implementación de una base de datos relacional (PostgreSQL) gestionada por Prisma ORM para establecer el
+ * Persistencia de Datos (Backend): Implementación de una base de datos relacional (PostgreSQL) gestionada por Prisma ORM para establecer el
   modelo CRUD de usuarios, registro de sesiones, historiales de victoria y cálculo de ranking global ELO.
 
- .Evolución Heurística de la IA: Transición del algoritmo base actual (Greedy) hacia una arquitectura de toma de decisiones basada en 
+ * Evolución Heurística de la IA: Transición del algoritmo base actual (Greedy) hacia una arquitectura de toma de decisiones basada en 
   árboles Minimax con poda Alfa-Beta, permitiendo el ajuste paramétrico de la dificultad del agente.
