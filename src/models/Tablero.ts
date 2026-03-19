@@ -129,111 +129,113 @@ export class Tablero {
     
 
     moverPieza(origen: Posicion, destino: Posicion): boolean {
+        /*
+        Propósito:
+         * Evaluar y ejecutar la transición de una pieza desde su origen hacia un destino,
+           procesando reglas de captura, enroque, movimiento al paso y colisiones.
+        
+        Precondición:
+         * Las coordenadas de origen y destino deben estar dentro de los límites de la matriz (0-7).
+        
+        Parámetros:
+         * origen : Posicion
+         * destino : Posicion
+        
+        Tipo:
+         * Boolean
+        
+        Observaciones:
+         * Operación UPDATE principal del motor lógico.
+         * Aplica interceptores estrictos de seguridad para blindar al Rey contra 
+           capturas directas y aislar validaciones de Enroque / Al Paso.
+        */
         const pieza = this.obtenerPieza(origen);
 
         if (!pieza) {
-            console.log(`Error: No hay pieza en origen.`);
+            console.log("Error: No hay pieza en origen.");
             return false;
         }
 
-        // --- NUEVA VALIDACIÓN: EL TURNO ---
         if (pieza.color !== this._turnoActual) {
             console.log(`Error: Movimiento ilegal. Es el turno de las piezas ${this._turnoActual}s.`);
             return false;
         }
 
         const piezaEnDestino = this.obtenerPieza(destino);
+        
+        // REGLA MAESTRA: Prevención absoluta de destrucción de la clase Rey
+        if (piezaEnDestino && piezaEnDestino.tipo === TipoPieza.REY) {
+            console.log("Error critico: Intento de captura de Rey bloqueado por el motor.");
+            return false;
+        }
+
+        if (piezaEnDestino && piezaEnDestino.color === pieza.color) {
+            console.log("Error: Casilla ocupada por un aliado.");
+            return false;
+        }
+
         let esCaptura = piezaEnDestino !== null;
         let esAlPaso = false;
-        
-        // --- NUEVO: INTERCEPTOR "AL PASO" ---
-        // Si el contrato básico de la pieza rechaza el movimiento, chequeamos si es una jugada "Al Paso"
+        let esEnroque = false;
+
+        // CAPA DE INTERCEPCIÓN LOGICA
         if (!pieza.esMovimientoValido(destino, esCaptura)) {
-            
             if (this.esCapturaAlPasoValida(origen, destino, pieza)) {
                 esAlPaso = true;
-                esCaptura = true; // Forzamos que se considere una captura
-            } else {
-                console.log(`Error: Movimiento ilegal para el ${pieza.tipo}.`);
+                esCaptura = true;
+            } 
+            else if (pieza.tipo === TipoPieza.REY && Math.abs(destino.columna - origen.columna) === 2 && !pieza.seHaMovido) {
+                esEnroque = true;
+            } 
+            else {
+                console.log(`Error: Movimiento ilegal para la clase ${pieza.tipo}.`);
                 return false;
             }
         }
-        
-        // 1. Validar fuego amigo
-        if (piezaEnDestino && piezaEnDestino.color === pieza.color) {
-            console.log(`Error: Casilla ocupada por aliado.`);
-            return false;
-        }
 
-        // 2. ¿Es una captura? (Si hay pieza en destino y no es aliada, es enemiga)
-        esCaptura = piezaEnDestino !== null;
-
-        // 3. Validar las reglas internas (¡NUEVO INTERCEPTOR!)
-        if (!pieza.esMovimientoValido(destino, esCaptura)) {
-            // Si el movimiento básico falla, preguntamos si es una jugada "Al Paso"
-            if (this.esCapturaAlPasoValida(origen, destino, pieza)) {
-                esAlPaso = true;
-                esCaptura = true; // Forzamos que el tablero lo entienda como captura
-            } else {
-                console.log(`❌ Error: Movimiento ilegal para el ${pieza.tipo}.`);
-                return false;
-            }
-        }
-      // 4. Validar colisiones en el trayecto (EXCEPTO para el Caballo que salta)
-        if (pieza.tipo !== TipoPieza.CABALLO) {
+        // CAPA DE COLISIONES
+        if (pieza.tipo !== TipoPieza.CABALLO && !esEnroque) {
             if (!this.caminoEstaLibre(origen, destino)) {
-                console.log(`Error: El camino de la pieza está bloqueado.`);
+                console.log("Error: El vector de movimiento se encuentra bloqueado.");
                 return false;
             }
         }
 
-        // 5. REGLA ANTI-SUICIDIO (Siempre se evalúa ANTES de alterar la matriz)
+        // CAPA ANTI-SUICIDIO TÁCTICO
         if (this.dejaAlReyEnJaque(origen, destino, pieza.color)) {
-            console.log(`Error: Movimiento Ilegal. Estás exponiendo a tu Rey a un Jaque.`);
+            console.log("Error: Movimiento Ilegal. Exposicion directa del Rey a un Jaque.");
             return false;
         }
 
-        // ==========================================
-        // 6. NUEVO: INTERCEPTOR DE ENROQUE
-        // ==========================================
-        if (pieza.tipo === TipoPieza.REY && Math.abs(destino.columna - origen.columna) === 2) {
-            // Determinamos hacia dónde fue el Rey para saber qué lado es
+        // DELEGACIÓN DE ENROQUE
+        if (esEnroque) {
             const lado = destino.columna > origen.columna ? 'CORTO' : 'LARGO';
-            
-            // Llamamos a tu método especializado
             const enroqueValido = this.enrocar(pieza.color, lado);
             
-            if (!enroqueValido) {
-                return false; // El método enrocar ya imprimió el motivo del fallo
-            }
+            if (!enroqueValido) return false;
             
-            // Si fue exitoso, el método enrocar YA movió las piezas en la matriz.
-            // Registramos, avanzamos turno y terminamos el ciclo prematuramente.
             this._ultimoMovimiento = { piezaMovida: pieza.tipo, color: pieza.color, origen, destino };
             this.avanzarTurno();
             return true;
         }
 
-        // ==========================================
-        // 7. EJECUCIÓN DEL MOVIMIENTO LÓGICO NORMAL
-        // ==========================================
+        // EJECUCIÓN DEL FLUJO NORMAL (Operación UPDATE Lógica)
         pieza.mover(destino);
         this._casillas[destino.fila]![destino.columna] = pieza;
         this._casillas[origen.fila]![origen.columna] = null;
 
-        // --- EJECUCIÓN DEL "AL PASO" Y CAPTURAS ---
         if (esAlPaso) {
             const filaEnemigo = origen.fila; 
             const colEnemigo = destino.columna;
             this._casillas[filaEnemigo]![colEnemigo] = null;
-            console.log(`¡Peón al Paso! ${pieza.color} captura al Peón fantasma.`);
+            console.log(`Peon al Paso: La clase ${pieza.color} efectuo la captura.`);
         } else if (esCaptura) { 
-            console.log(`¡${pieza.tipo} captura a ${piezaEnDestino!.tipo}!`);
+            console.log(`Captura valida: ${pieza.tipo} elimina a ${piezaEnDestino!.tipo}.`);
         } else {
-            console.log(`${pieza.tipo} movido con éxito.`);
+            console.log(`Posicion actualizada: ${pieza.tipo}.`);
         }
 
-        // --- REGISTRO HISTÓRICO Y TURNO ---
+        // REGISTRO DE MEMORIA A CORTO PLAZO
         this._ultimoMovimiento = {
             piezaMovida: pieza.tipo,
             color: pieza.color,
@@ -292,28 +294,40 @@ export class Tablero {
         Observaciones:
          * Calcula la dirección del paso (-1, 0, o 1) para filas y columnas, y recorre 
            el camino iterativamente comprobando si hay piezas en la matriz.
+         * Implementa un límite estricto de seguridad matemática (pasosMaximos) 
+           para prevenir bucles infinitos en el hilo principal del navegador.
         */
+        const pieza = this.obtenerPieza(origen);
+        if (!pieza) return false;
+
+        // El Caballo ignora las colisiones estructurales por regla de la clase
+        if (pieza.tipo === TipoPieza.CABALLO) return true;
 
         const difFila = destino.fila - origen.fila;
-        const difCol = destino.columna - origen.columna;
+        const difColumna = destino.columna - origen.columna;
 
-        // Normalizamos los valores para saber hacia dónde caminar (ej: si difFila es -3, pasoFila será -1)
-        const pasoFila = difFila === 0 ? 0 : (difFila > 0 ? 1 : -1);
-        const pasoCol = difCol === 0 ? 0 : (difCol > 0 ? 1 : -1);
+        // Normalizamos los valores para calcular el vector direccional
+        const pasoFila = difFila === 0 ? 0 : difFila / Math.abs(difFila);
+        const pasoCol = difColumna === 0 ? 0 : difColumna / Math.abs(difColumna);
 
+        // Escudo Arquitectónico: Límite estricto de iteraciones basado en distancia absoluta
+        const pasosMaximos = Math.max(Math.abs(difFila), Math.abs(difColumna));
+        
         let filaActual = origen.fila + pasoFila;
         let colActual = origen.columna + pasoCol;
+        let pasosDados = 1;
 
-        // Mientras no lleguemos al destino, revisamos las casillas intermedias
-        while (filaActual !== destino.fila || colActual !== destino.columna) {
+        // Iteración segura controlada por el límite de pasos
+        while (pasosDados < pasosMaximos) {
             if (this._casillas[filaActual]?.[colActual] !== null) {
-                return false; // ¡Hay una pieza bloqueando el camino!
+                return false; // Hay una pieza bloqueando el vector
             }
             filaActual += pasoFila;
             colActual += pasoCol;
+            pasosDados++;
         }
 
-        return true; // El camino está despejado
+        return true; 
     }
 
 
@@ -832,12 +846,14 @@ export class Tablero {
                 // ==========================================
                 let esGeometriaValida = false;
                 
-                // NUEVO: Determinamos si el destino contiene una pieza para informarle a las clases
+                // Determinamos si el destino contiene una pieza para informarle a las clases
                 const esCaptura = piezaEnDestino !== null;
 
+                // Operación READ: Cálculo geométrico en el ámbito superior para visibilidad global
+                const difFila = destinoTemporal.fila - origen.fila;
+                const difColumna = Math.abs(destinoTemporal.columna - origen.columna);
+
                 if (piezaOrigen.tipo === TipoPieza.PEON) {
-                    const difColumna = Math.abs(destinoTemporal.columna - origen.columna);
-                    const difFila = destinoTemporal.fila - origen.fila;
                     const direccion = piezaOrigen.color === Color.BLANCO ? 1 : -1;
 
                     if (difColumna === 0) {
@@ -852,9 +868,22 @@ export class Tablero {
                             }
                         }
                     }
-                } else {
-                    // Operación READ delegada: Ahora le pasamos estrictamente el parámetro 'esCaptura'
-                    // para que el Rey, el Alfil y los demás sepan que pueden atacar.
+                } 
+                // INTERCEPTOR ESTRICTO PARA PINTAR EL ENROQUE
+                // Aplica restricción geométrica: difFila === 0 asegura movimiento estrictamente horizontal
+                else if (piezaOrigen.tipo === TipoPieza.REY && difColumna === 2 && difFila === 0) {
+                    
+                    if (!piezaOrigen.seHaMovido) {
+                        const columnaTorre = destinoTemporal.columna > origen.columna ? 7 : 0;
+                        const torre = this.obtenerPieza({ fila: origen.fila, columna: columnaTorre });
+                        
+                        if (torre && torre.tipo === TipoPieza.TORRE && !torre.seHaMovido) {
+                            esGeometriaValida = true;
+                        }
+                    }
+                } 
+                else {
+                    // Delegación de validación al contrato de la clase correspondiente
                     esGeometriaValida = piezaOrigen.esMovimientoValido(destinoTemporal, esCaptura);
                 }
 

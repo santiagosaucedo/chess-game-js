@@ -212,6 +212,8 @@ function procesarInteraccionUsuario(filaObjetivo: number, columnaObjetivo: numbe
      * Implementa un bloque Try-Catch para gestionar las precondiciones estrictas 
        del método 'moverPieza' sin interrumpir el flujo visual (limpieza de estado).
     */
+    // NUEVO: Candado maestro. Si el juego terminó (Jaque Mate / Empate), congela los clicks.
+    if (juegoTerminado) return;
 
     // Si hay un menú de coronación abierto, ignoramos los clicks en el tablero
     if (coordenadaPromocion !== null) return;
@@ -790,5 +792,4 @@ if (btnMusica && audioFondo) {
 if (colorOponente === Color.BLANCO) {
     procesarTurnoIA();
 }
-
 

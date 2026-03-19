@@ -31,12 +31,6 @@ export class Rey extends Pieza {
             return false; 
         }
 
-        // --- NUEVO: EXCEPCIÓN PARA EL ENROQUE ---
-        // Permitimos que el Rey se mueva 2 columnas a los lados (solo en su misma fila)
-        if (distanciaFila === 0 && distanciaColumna === 2) {
-            return true;
-        }
-
         // Su distancia máxima en cualquier eje (X o Y) no puede ser mayor a 1
         return distanciaFila <= 1 && distanciaColumna <= 1;
     }
