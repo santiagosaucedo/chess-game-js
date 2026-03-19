@@ -42,7 +42,7 @@ Para ejecutar este proyecto en un entorno de desarrollo local, siga los siguient
 
 1. Clonar el repositorio:
    ```bash
-   git clone [https://github.com/santiagosaucedo/chess-game-js.git](https://github.com/santiagosaucedo/chess-game-js.git)
+   git clone https://github.com/santiagosaucedo/chess-game-js.git
 2. Instalar las dependencias de compilación:
    ```bash
     npm install
